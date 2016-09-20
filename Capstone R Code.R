@@ -585,3 +585,92 @@ linreg.kidney <- lm(log10(AMP) ~ Timeli.code + Density + log(ACC) + log10(Discha
 summary(linreg.kidney)
 linreg.pred.kidney = predict(linreg, newdata=test.kidney)
 RMSE(linreg.pred.kidney, log10(test.kidney$AMP)) # RMSE = 0.1479005
+
+
+
+
+
+
+
+
+
+
+
+############ Visualizations
+
+#Start by  putting top DRGs together in one dataframe
+
+df.top5 <- rbind(df.pneu, df.sept, df.heart, df.esoph, df.kidney)
+
+# Shorten DRG names
+df.top5$DRGName <- as.character(df.top5$DRGName) 
+df.top5$DRGName <- as.factor(df.top5$DRGName)
+levels(df.top5$DRGName) <- c("Esoph", "Heart", "Kidney", "Sept", "Pneu")
+
+# Show distribution of log10(AMP) divided up by DRG
+ggplot(df.top5, aes(DRGName, log10(AMP), color = DRGName)) + 
+      geom_boxplot()  
+
+ggplot(df.top5, aes(log10(AMP), fill = DRGName)) + 
+  geom_density(alpha = 0.25)
+
+# Look at log10(AMP) vs. density
+ggplot(df.top5, aes(Density, log10(AMP), color = DRGName)) + 
+      geom_point(shape = 3, position = "jitter", alpha = 0.5) +
+      theme(legend.position = "bottom")
+
+
+ggplot(df.top5, aes(log10(Density), log10(AMP), color = DRGName)) + 
+  geom_point(shape = 3, position = "jitter", alpha = 0.5) +
+  theme(legend.position = "bottom")
+
+ggplot(df.top5, aes(log10(Density), log10(AMP), color = DRGName)) + 
+  geom_point(shape = 3, position = "jitter", alpha = 0.5) +
+  facet_grid(.~DRGName)
+  
+
+# log10(AMP) vs. log10(ACC)
+ggplot(df.top5, aes(log10(ACC), log10(AMP), color = DRGName)) + 
+  geom_point(shape = 3, position = "jitter", alpha = 0.5) +
+  theme(legend.position = "bottom")
+
+ggplot(df.top5, aes(log10(ACC), log10(AMP), color = DRGName)) + 
+  geom_point(shape = 3, position = "jitter", alpha = 0.5) +
+  facet_grid(.~DRGName)
+
+
+# Plots about Timeliness
+ggplot(df.top5, aes(Timeli, log10(AMP), color = Timeli)) + 
+  geom_boxplot() + 
+  facet_grid(.~DRGName)
+
+ggplot(df.top5, aes(log10(AMP), fill = Timeli)) + 
+  geom_density(alpha = 0.25) + 
+  facet_grid(DRGName~.)
+
+# Plots about Effectiveness
+ggplot(df.top5, aes(Effec, log10(AMP), color = Effec)) + 
+  geom_boxplot() + 
+  facet_grid(.~DRGName)
+
+ggplot(df.top5, aes(log10(AMP), fill = Effec)) + 
+  geom_density(alpha = 0.25) + 
+  facet_grid(DRGName~.)
+
+
+#Plots about region
+ggplot(df.top5, aes(Region, log10(AMP), color = Region)) + 
+  geom_boxplot() + 
+  facet_grid(.~DRGName)
+
+ggplot(df.top5, aes(log10(AMP), fill = Region)) + 
+  geom_density(alpha = 0.25) + 
+  facet_grid(DRGName~.)
+
+ggplot(df, aes(Region, log10(AMP), fill = Region)) + 
+  geom_boxplot() + ggtitle("All DRGs")
+
+# Plots about hospital ownership
+ggplot(df, aes(Owner, log10(AMP), fill = Owner)) + 
+  geom_boxplot() + ggtitle("All DRGs")
+  
