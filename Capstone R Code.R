@@ -72,12 +72,12 @@ medicare.large$County.ID <- as.factor(medicare.large$County.ID)
 
 ##Create dataframe with variables useful for modeling
 
-df <- select(medicare.large, 2:3, 10:11, 13, 15:16, 19:26, 30:32)
+df <- select(medicare.large, 2:3, 10:11, 13, 15:16, 19:28, 30:32)
 
 
 #Rename variables names so they are shorter
 names(df) <- c("DRGCode", "DRGName", "Dischar", "ACC", "AMP", "Region", "Division",
-               "Owner", "Rating", "Mort", "Safety", "Readmiss", "Exper", "Effec", "Timeli",
+               "Owner", "Rating", "Mort", "Safety", "Readmiss", "Exper", "Effec", "Timeli", "Latitude", "Longitude",
                "Poverty", "Income", "Density")
 
 
@@ -148,40 +148,35 @@ tr.control = trainControl(method = "cv", number = 10)
 
 cp.grid = expand.grid(.cp = seq(0.000001,0.00005,0.000001)) 
 
-train(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+train(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
         Effec + Timeli + Poverty + Income + Density, data = train, method = "rpart", trControl = tr.control, tuneGrid = cp.grid)
-#RMSE was used to select the optimal model using  the smallest value. The final value used for the model was cp = 4e-06. 
+#RMSE was used to select the optimal model using  the smallest value. The final value used for the model was cp = 4.8e-05. 
 
-tree1 = rpart(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
-                Effec + Timeli + Poverty + Income + Density, data = train, cp = 4e-06)
+tree1 = rpart(log10(AMP) ~  Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+                Effec + Timeli + Poverty + Income + Density, data = train, cp = 4.8e-05)
 
 prp(tree1, main = "All DRGs")
 
 # Find RMSE 
 tree1.pred = predict(tree1, newdata=test)
-RMSE(tree1.pred, log10(test$AMP)) # RMSE = 0.1157704
+RMSE(tree1.pred, log10(test$AMP)) # RMSE = 0.2768306
 
 #Create Readable Tree for Visual Analysis
-tree.readable = rpart(log10(AMP) ~ ACC + Dischar + Region  + Owner + Rating + Mort + Safety + Readmiss + Exper + 
-                Effec + Timeli + Poverty + Income + Density, data = train, cp = .003)
+tree.readable = rpart(log10(AMP) ~  Dischar + Region  + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+                Effec + Timeli + Poverty + Income + Density, data = train, cp = .002)
 
 prp(tree.readable, main = "Readable Tree - All DRG's")
 
-#Readable tree without ACC
-tree.readable2 = rpart(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
-                        Effec + Timeli + Poverty + Income + Density, data = train, cp = .002)
-
-prp(tree.readable2, main = "Readable Tree without ACC - All DRG's")
 
 # Random Forest
 set.seed(1234)
 split = sample.split(train$AMP, SplitRatio = 0.2)
 train.smaller = subset(df, split==TRUE)
-forest1 = randomForest(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty 
+forest1 = randomForest(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty 
                        + Density, data = train.smaller, ntree = 200)
 
 forest1.pred = predict(forest1, newdata=test)
-RMSE(forest1.pred, log10(test$AMP)) # RMSE = 0.1087334
+RMSE(forest1.pred, log10(test$AMP)) # RMSE = 0.281763
 
 #Important variables
 varImpPlot(forest1)
@@ -198,30 +193,30 @@ test.pneu = subset(df.pneu, split==FALSE)
 
 tr.control = trainControl(method = "cv", number = 10)
 cp.grid = expand.grid(.cp = seq(0.0001,0.005,0.0001)) 
-train(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+train(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
         Effec + Timeli + Poverty + Income + Density, data = train.pneu, method = "rpart", trControl = tr.control, tuneGrid = cp.grid) 
-#RMSE was used to select the optimal model using  the smallest value. The final value used for the model was cp = 0.0034
+#RMSE was used to select the optimal model using  the smallest value. The final value used for the model was cp = 0.0019
 
-tree1.pneu = rpart(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
-                     Effec + Timeli + Poverty + Income + Density, data = train.pneu, cp = 0.0034)
-prp(tree1.pneu, main = "SIMPLE PNEUMONIA & PLEURISY W CC") #ACC doesn't dominiate the tree anymore, which makes the tree far more useful and interesting. 
+tree1.pneu = rpart(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+                     Effec + Timeli + Poverty + Income + Density, data = train.pneu, cp = 0.0019)
+prp(tree1.pneu, main = "SIMPLE PNEUMONIA & PLEURISY W CC") 
 
 # Find RMSE 
 tree1.pneu.pred = predict(tree1.pneu, newdata=test.pneu)
 RMSE(tree1.pneu.pred, log10(test.pneu$AMP)) # RMSE = 0.08174722
 
 #Create Readable Tree for Visual Analysis
-tree.pneu.readable = rpart(log10(AMP) ~ ACC + Dischar + Region  + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+tree.pneu.readable = rpart(log10(AMP) ~ Dischar + Region  + Owner + Rating + Mort + Safety + Readmiss + Exper + 
                         Effec + Timeli + Poverty + Income + Density, data = train.pneu, cp = .008)
 
 prp(tree.pneu.readable, main = "SIMPLE PNEUMONIA & PLEURISY W CC")
 
 # Random Forest
-forest.pneu = randomForest(log10(AMP) ~ ACC + Dischar+ Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty + Density, data = train.pneu, ntree = 200)
+forest.pneu = randomForest(log10(AMP) ~ Dischar+ Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty + Density, data = train.pneu, ntree = 200)
 
 # Find Random Forest RMSE 
 forest.pneu.pred = predict(forest.pneu, newdata=test.pneu)
-RMSE(forest.pneu.pred, log10(test.pneu$AMP)) # RMSE = 0.07112384
+RMSE(forest.pneu.pred, log10(test.pneu$AMP)) # RMSE = 0.07018965
 
 #Important variables
 varImpPlot(forest.pneu)
@@ -237,29 +232,29 @@ test.sept = subset(df.sept, split==FALSE)
 
 tr.control = trainControl(method = "cv", number = 10)
 cp.grid = expand.grid(.cp = seq(0.0001,0.005,0.0001)) 
-train(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+train(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
         Effec + Timeli + Poverty + Income + Density, data = train.sept, method = "rpart", trControl = tr.control, tuneGrid = cp.grid) 
-#RMSE was used to select the optimal model using  the smallest value. The final value used for the model was cp = 0.0023
+#RMSE was used to select the optimal model using  the smallest value. The final value used for the model was cp = 0.004
 
-tree1.sept = rpart(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
-                     Effec + Timeli + Poverty + Income + Density, data = train.sept, cp = 0.0023)
+tree1.sept = rpart(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+                     Effec + Timeli + Poverty + Income + Density, data = train.sept, cp = 0.004)
 prp(tree1.sept, main = "SEPTICEMIA OR SEVERE SEPSIS W/O MV 96+ HOURS W MCC")
 
 # Find RMSE 
 tree1.sept.pred = predict(tree1.sept, newdata=test.sept)
-RMSE(tree1.sept.pred, log10(test.sept$AMP)) # RMSE = 0.07253651
+RMSE(tree1.sept.pred, log10(test.sept$AMP)) # RMSE = 0.06898943
 
 #Create readable tree
-tree.readable.sept = rpart(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+tree.readable.sept = rpart(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
                      Effec + Timeli + Poverty + Income + Density, data = train.sept, cp = 0.008)
 prp(tree.readable.sept, main = "SEPTICEMIA OR SEVERE SEPSIS W/O MV 96+ HOURS W MCC")
 
 # Random Forest
-forest.sept = randomForest(log10(AMP) ~ ACC + Dischar+ Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty + Density, data = train.sept, ntree = 200)
+forest.sept = randomForest(log10(AMP) ~ Dischar+ Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty + Density, data = train.sept, ntree = 200)
 
 # Find Random Forest RMSE 
 forest.sept.pred = predict(forest.sept, newdata=test.sept)
-RMSE(forest.sept.pred, log10(test.sept$AMP)) # RMSE = 0.05859889
+RMSE(forest.sept.pred, log10(test.sept$AMP)) # RMSE = 0.06281184
 
 #Important variables
 varImpPlot(forest.sept)
@@ -278,30 +273,30 @@ test.heart = subset(df.heart, split==FALSE)
 
 tr.control = trainControl(method = "cv", number = 10)
 cp.grid = expand.grid(.cp = seq(0.0001,0.005,0.0001)) 
-train(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+train(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
         Effec + Timeli + Poverty + Income + Density, data = train.heart, method = "rpart", trControl = tr.control, tuneGrid = cp.grid) 
-#RMSE was used to select the optimal model using  the smallest value. The final value used for the model was cp = 0.0036
+#RMSE was used to select the optimal model using  the smallest value. The final value used for the model was cp = 0.0042
 
-tree1.heart = rpart(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
-                      Effec + Timeli + Poverty + Income + Density, data = train.heart, cp = 0.0036)
+tree1.heart = rpart(log10(AMP) ~Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+                      Effec + Timeli + Poverty + Income + Density, data = train.heart, cp = 0.0042)
 prp(tree1.heart, main = "HEART FAILURE & SHOCK W CC")
 
 # Find RMSE 
 tree1.heart.pred = predict(tree1.heart, newdata=test.heart)
-RMSE(tree1.heart.pred, log10(test.heart$AMP)) # RMSE = 0.0839683
+RMSE(tree1.heart.pred, log10(test.heart$AMP)) # RMSE = 0.08521931
 
 #Readable Tree
-tree.readable.heart = rpart(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+tree.readable.heart = rpart(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
                       Effec + Timeli + Poverty + Income + Density, data = train.heart, cp = 0.008)
 prp(tree.readable.heart, main = "HEART FAILURE & SHOCK W CC")
 
 
 # Random Forest
-forest.heart = randomForest(log10(AMP) ~ ACC + Dischar+ Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty + Density, data = train.heart, ntree = 200)
+forest.heart = randomForest(log10(AMP) ~ Dischar+ Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty + Density, data = train.heart, ntree = 200)
 
 # Find Random Forest RMSE 
 forest.heart.pred = predict(forest.heart, newdata=test.heart)
-RMSE(forest.heart.pred, log10(test.heart$AMP)) # RMSE = 0.06739146
+RMSE(forest.heart.pred, log10(test.heart$AMP)) # RMSE = 0.07487536
 
 #Important variables
 varImpPlot(forest.heart)
@@ -318,30 +313,30 @@ test.esoph = subset(df.esoph, split==FALSE)
 
 tr.control = trainControl(method = "cv", number = 10)
 cp.grid = expand.grid(.cp = seq(0.0001,0.005,0.0001)) 
-train(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+train(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
         Effec + Timeli + Poverty + Income + Density, data = train.esoph, method = "rpart", trControl = tr.control, tuneGrid = cp.grid) 
-#RMSE was used to select the optimal model using  the smallest value. The final value used for the model was cp = 0.0027
+#RMSE was used to select the optimal model using  the smallest value. The final value used for the model was cp = 0.0026
 
-tree1.esoph = rpart(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
-                      Effec + Timeli + Poverty + Income + Density, data = train.esoph, cp = 0.0027)
+tree1.esoph = rpart(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+                      Effec + Timeli + Poverty + Income + Density, data = train.esoph, cp = 0.0026)
 prp(tree1.esoph, main = "ESOPHAGITIS, GASTROENT & MISC DIGEST DISORDERS W/O MCC ")
 
 # Find RMSE 
 tree1.esoph.pred = predict(tree1.esoph, newdata=test.esoph)
-RMSE(tree1.esoph.pred, log10(test.esoph$AMP)) # RMSE = 0.09287724
+RMSE(tree1.esoph.pred, log10(test.esoph$AMP)) # RMSE = 0.09360937
 
 #Readable Tree
-tree.readable.esoph = rpart(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+tree.readable.esoph = rpart(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
                       Effec + Timeli + Poverty + Income + Density, data = train.esoph, cp = 0.008)
 prp(tree.readable.esoph, main = "ESOPHAGITIS, GASTROENT & MISC DIGEST DISORDERS W/O MCC ")
 
 
 # Random Forest
-forest.esoph = randomForest(log10(AMP) ~ ACC + Dischar+ Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty + Density, data = train.esoph, ntree = 200)
+forest.esoph = randomForest(log10(AMP) ~ Dischar+ Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty + Density, data = train.esoph, ntree = 200)
 
 # Find Random Forest RMSE 
 forest.esoph.pred = predict(forest.esoph, newdata=test.esoph)
-RMSE(forest.esoph.pred, log10(test.esoph$AMP)) # RMSE = 0.07802812
+RMSE(forest.esoph.pred, log10(test.esoph$AMP)) # RMSE = 0.0852079
 
 #Important variables
 varImpPlot(forest.esoph)
@@ -360,26 +355,26 @@ test.kidney = subset(df.kidney, split==FALSE)
 
 tr.control = trainControl(method = "cv", number = 10)
 cp.grid = expand.grid(.cp = seq(0.0001,0.005,0.0001)) 
-train(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+train(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
         Effec + Timeli + Poverty + Income + Density, data = train.kidney, method = "rpart", trControl = tr.control, tuneGrid = cp.grid) 
-#RMSE was used to select the optimal model using  the smallest value. The final value used for the model was cp = 0.0034
+#RMSE was used to select the optimal model using  the smallest value. The final value used for the model was cp = 0.0038
 
-tree1.kidney = rpart(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
-                       Effec + Timeli + Poverty + Income + Density, data = train.kidney, cp = 0.0034)
+tree1.kidney = rpart(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+                       Effec + Timeli + Poverty + Income + Density, data = train.kidney, cp = 0.0038)
 prp(tree1.kidney, main = "KIDNEY & URINARY TRACT INFECTIONS W/O MCC")
 
 # Find RMSE 
 tree1.kidney.pred = predict(tree1.kidney, newdata=test.kidney)
-RMSE(tree1.kidney.pred, log10(test.kidney$AMP)) # RMSE = 0.08652537
+RMSE(tree1.kidney.pred, log10(test.kidney$AMP)) # RMSE = 0.08245488
 
 #Readable Tree
-tree.readable.kidney = rpart(log10(AMP) ~ ACC + Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
+tree.readable.kidney = rpart(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper + 
                        Effec + Timeli + Poverty + Income + Density, data = train.kidney, cp = 0.008)
 prp(tree.readable.kidney, main = "KIDNEY & URINARY TRACT INFECTIONS W/O MCC")
 
 
 # Random Forest
-forest.kidney = randomForest(log10(AMP) ~ ACC + Dischar+ Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty + Density, data = train.kidney, ntree = 200)
+forest.kidney = randomForest(log10(AMP) ~ Dischar+ Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty + Density, data = train.kidney, ntree = 200)
 
 # Find Random Forest RMSE 
 forest.kidney.pred = predict(forest.kidney, newdata=test.kidney)
@@ -405,9 +400,9 @@ varImpPlot(forest.kidney)
 ## install.packages("leaps")
 library(leaps)
 
-regfitfull = regsubsets(log10(AMP) ~ log10(ACC) + log10(Dischar)  + Poverty +  
+regfitfull = regsubsets(log10(AMP) ~ log10(Dischar)  + Poverty +  
                           Income +  Density + Rating + Mort.code + Safety.code + 
-                          Readmiss.code + Exper.code + Effec.code + Timeli.code, data = df, nvmax = 12, method = "forward")
+                          Readmiss.code + Exper.code + Effec.code + Timeli.code, data = df, nvmax = 11, method = "forward")
 summary(regfitfull)
 
 reg.summary <- summary(regfitfull)
@@ -417,28 +412,27 @@ reg.summary <- summary(regfitfull)
 plot(reg.summary$bic, xlab = "Number of Variables", ylab = "BIC Statistic", main = "All DRGs")
 
 #Find inflection point of BIC graph
-nvar <- c(1:12)
+nvar <- c(1:11)
 model <- lm(reg.summary$bic ~ nvar + I(nvar^2))
 summary(model)
 coeff <- coefficients(model)
 
--coeff[2]/(2*coeff[3]) #This gives me 9.186588, so I will use 9 variables.
+-coeff[2]/(2*coeff[3]) #This gives me 8.619189, so I will use 9 variables.
 
 
 #Create model and find RMSE
-linreg <- lm(log10(AMP) ~ log10(ACC) + Effec.code + Density + Safety.code + Exper.code + Timeli.code + Income 
-             + log10(Dischar) + Mort.code, data = train)
+linreg <- lm(log10(AMP) ~ Timeli.code + Density + log10(Dischar) + Income + Poverty + Safety.code + Exper.code + Effec.code + Rating, data = train)
 summary(linreg)
 linreg.pred = predict(linreg, newdata=test)
-RMSE(linreg.pred, log10(test$AMP)) # RMSE = 0.1677725
+RMSE(linreg.pred, log10(test$AMP)) # RMSE = 0.2908499
 
 
 
 
 # Create model for just SIMPLE PNEUMONIA & PLEURISY W CC 
-regfitfull.pneu = regsubsets(log10(AMP) ~ log10(ACC) + log10(Dischar)  + Poverty +  
+regfitfull.pneu = regsubsets(log10(AMP) ~ log10(Dischar)  + Poverty +  
                           Income +  Density + Rating + Mort.code + Safety.code + 
-                          Readmiss.code + Exper.code + Effec.code + Timeli.code, data = df.pneu, nvmax = 12, method = "forward")
+                          Readmiss.code + Exper.code + Effec.code + Timeli.code, data = df.pneu, nvmax = 11, method = "forward")
 summary(regfitfull.pneu)
 
 reg.summary.pneu <- summary(regfitfull.pneu)
@@ -448,28 +442,28 @@ reg.summary.pneu <- summary(regfitfull.pneu)
 plot(reg.summary.pneu$bic, xlab = "Number of Variables", ylab = "BIC Statistic", main = "SIMPLE PNEUMONIA & PLEURISY W CC")
 
 #Find inflection point of BIC graph
-nvar <- c(1:12)
+nvar <- c(1:11)
 model <- lm(reg.summary.pneu$bic ~ nvar + I(nvar^2))
 summary(model)
 coeff <- coefficients(model)
 
--coeff[2]/(2*coeff[3]) #This gives me 8.870661, so I will use 9 variables.
+-coeff[2]/(2*coeff[3]) #This gives me 8.249382, so I will use 8 variables.
 
 
 #Create model and find RMSE
-linreg.pneu <- lm(log10(AMP) ~ Density + Timeli.code + log10(Dischar) + log10(ACC) + Rating + Income 
-                  + Poverty + Safety.code + Mort.code, data = train.pneu)
+linreg.pneu <- lm(log10(AMP) ~ Density + Timeli.code + log10(Dischar) + Rating + Income 
+                  + Poverty + Mort.code + Readmiss.code, data = train.pneu)
 summary(linreg.pneu)
 linreg.pred.pneu = predict(linreg, newdata=test.pneu)
-RMSE(linreg.pred.pneu, log10(test.pneu$AMP)) # RMSE = 0.1573322
+RMSE(linreg.pred.pneu, log10(test.pneu$AMP)) # RMSE = 0.1605963
 
 
 
 
 # Create model for just SEPTICEMIA OR SEVERE SEPSIS W/O MV 96+ HOURS W MCC 
-regfitfull.sept = regsubsets(log10(AMP) ~ log10(ACC) + log10(Dischar)  + Poverty +  
+regfitfull.sept = regsubsets(log10(AMP) ~ log10(Dischar)  + Poverty +  
                                Income +  Density + Rating + Mort.code + Safety.code + 
-                               Readmiss.code + Exper.code + Effec.code + Timeli.code, data = df.sept, nvmax = 12, method = "forward")
+                               Readmiss.code + Exper.code + Effec.code + Timeli.code, data = df.sept, nvmax = 11, method = "forward")
 summary(regfitfull.sept)
 
 reg.summary.sept <- summary(regfitfull.sept)
@@ -479,27 +473,27 @@ reg.summary.sept <- summary(regfitfull.sept)
 plot(reg.summary.sept$bic, xlab = "Number of Variables", ylab = "BIC Statistic", main = "SEPTICEMIA OR SEVERE SEPSIS W/O MV 96+ HOURS W MCC ")
 
 #Find inflection point of BIC graph
-nvar <- c(1:12)
+nvar <- c(1:11)
 model <- lm(reg.summary.sept$bic ~ nvar + I(nvar^2))
 summary(model)
 coeff <- coefficients(model)
 
--coeff[2]/(2*coeff[3]) #This gives me 8.565095, so I will use 9 variables.
+-coeff[2]/(2*coeff[3]) #This gives me 7.756416, so I will use 8 variables.
 
 
 #Create model and find RMSE
-linreg.sept <- lm(log10(AMP) ~ Density + log10(ACC) + Timeli.code + Income + Poverty + Rating + log10(Dischar) 
-                  + Safety.code + Effec.code, data = train.sept)
+linreg.sept <- lm(log10(AMP) ~ Density + Timeli.code + Income + Poverty + Rating + Mort.code 
+                  + Readmiss.code + log10(Dischar), data = train.sept)
 summary(linreg.sept)
 linreg.pred.sept = predict(linreg, newdata=test.sept)
-RMSE(linreg.pred.sept, log10(test.sept$AMP)) # RMSE = 0.1763759
+RMSE(linreg.pred.sept, log10(test.sept$AMP)) # RMSE = 0.2168597
 
 
 
 # Create model for just HEART FAILURE & SHOCK W CC 
-regfitfull.heart = regsubsets(log10(AMP) ~ log10(ACC) + log10(Dischar)  + Poverty +  
+regfitfull.heart = regsubsets(log10(AMP) ~ log10(Dischar)  + Poverty +  
                                Income +  Density + Rating + Mort.code + Safety.code + 
-                               Readmiss.code + Exper.code + Effec.code + Timeli.code, data = df.heart, nvmax = 12, method = "forward")
+                               Readmiss.code + Exper.code + Effec.code + Timeli.code, data = df.heart, nvmax = 11, method = "forward")
 summary(regfitfull.heart)
 
 reg.summary.heart <- summary(regfitfull.heart)
@@ -509,19 +503,19 @@ reg.summary.heart <- summary(regfitfull.heart)
 plot(reg.summary.heart$bic, xlab = "Number of Variables", ylab = "BIC Statistic", main = "HEART FAILURE & SHOCK W CC")
 
 #Find inflection point of BIC graph
-nvar <- c(1:12)
+nvar <- c(1:11)
 model <- lm(reg.summary.heart$bic ~ nvar + I(nvar^2))
 summary(model)
 coeff <- coefficients(model)
 
--coeff[2]/(2*coeff[3]) #This gives me 8.794161, so I will use 9 variables.
+-coeff[2]/(2*coeff[3]) #This gives me 8.297385, so I will use 8 variables.
 
 
 
 
 #Create model and find RMSE
-linreg.heart <- lm(log10(AMP) ~ Density + Timeli.code + log10(ACC) + log10(Dischar) + Rating
-                   + Income + Poverty + Safety.code + Mort.code, data = train.heart)
+linreg.heart <- lm(log10(AMP) ~ Density + Timeli.code + Rating + log10(Dischar)
+                   + Income + Poverty + Mort.code + Safety.code, data = train.heart)
 summary(linreg.heart)
 linreg.pred.heart = predict(linreg, newdata=test.heart)
 RMSE(linreg.pred.heart, log10(test.heart$AMP)) # RMSE = 0.1467455
@@ -529,9 +523,9 @@ RMSE(linreg.pred.heart, log10(test.heart$AMP)) # RMSE = 0.1467455
 
 
 # Create model for just ESOPHAGITIS, GASTROENT & MISC DIGEST DISORDERS W/O MCC 
-regfitfull.esoph = regsubsets(log10(AMP) ~ log10(ACC) + log10(Dischar)  + Poverty +  
+regfitfull.esoph = regsubsets(log10(AMP) ~ log10(Dischar)  + Poverty +  
                                Income +  Density + Rating + Mort.code + Safety.code + 
-                               Readmiss.code + Exper.code + Effec.code + Timeli.code, data = df.esoph, nvmax = 12, method = "forward")
+                               Readmiss.code + Exper.code + Effec.code + Timeli.code, data = df.esoph, nvmax = 11, method = "forward")
 summary(regfitfull.esoph)
 
 reg.summary.esoph <- summary(regfitfull.esoph)
@@ -541,27 +535,27 @@ reg.summary.esoph <- summary(regfitfull.esoph)
 plot(reg.summary.esoph$bic, xlab = "Number of Variables", ylab = "BIC Statistic", main = "ESOPHAGITIS, GASTROENT & MISC DIGEST DISORDERS W/O MCC")
 
 #Find inflection point of BIC graph
-nvar <- c(1:12)
+nvar <- c(1:11)
 model <- lm(reg.summary.esoph$bic ~ nvar + I(nvar^2))
 summary(model)
 coeff <- coefficients(model)
 
--coeff[2]/(2*coeff[3]) #This gives me 9.18394, so I will use 9 variables.
+-coeff[2]/(2*coeff[3]) #This gives me 8.355533, so I will use 8 variables.
 
 
 #Create model and find RMSE
-linreg.esoph <- lm(log10(AMP) ~ Timeli.code + Density + Rating + log10(Dischar) + log10(ACC)
-                   + Mort.code + Income + Poverty + Exper.code, data = train.esoph)
+linreg.esoph <- lm(log10(AMP) ~ Timeli.code + Density + Rating + log10(Dischar) + 
+                    Income + Poverty + Mort.code + Exper.code, data = train.esoph)
 summary(linreg.esoph)
 linreg.pred.esoph = predict(linreg, newdata=test.esoph)
-RMSE(linreg.pred.esoph, log10(test.esoph$AMP)) # RMSE = 0.1683687
+RMSE(linreg.pred.esoph, log10(test.esoph$AMP)) # RMSE = 0.2715242
 
 
 
 # Create model for just KIDNEY & URINARY TRACT INFECTIONS W/O MCC 
-regfitfull.kidney = regsubsets(log10(AMP) ~ log10(ACC) + log10(Dischar)  + Poverty +  
+regfitfull.kidney = regsubsets(log10(AMP) ~ log10(Dischar)  + Poverty +  
                                Income +  Density + Rating + Mort.code + Safety.code + 
-                               Readmiss.code + Exper.code + Effec.code + Timeli.code, data = df.kidney, nvmax = 12, method = "forward")
+                               Readmiss.code + Exper.code + Effec.code + Timeli.code, data = df.kidney, nvmax = 11, method = "forward")
 summary(regfitfull.kidney)
 
 reg.summary.kidney <- summary(regfitfull.kidney)
@@ -571,20 +565,20 @@ reg.summary.kidney <- summary(regfitfull.kidney)
 plot(reg.summary.kidney$bic, xlab = "Number of Variables", ylab = "BIC Statistic", main = "KIDNEY & URINARY TRACT INFECTIONS W/O MCC")
 
 #Find inflection point of BIC graph
-nvar <- c(1:12)
+nvar <- c(1:11)
 model <- lm(reg.summary.kidney$bic ~ nvar + I(nvar^2))
 summary(model)
 coeff <- coefficients(model)
 
--coeff[2]/(2*coeff[3]) #This gives me 9.077869, so I will use 9 variables.
+-coeff[2]/(2*coeff[3]) #This gives me 8.439649, so I will use 8 variables.
 
 
 #Create model and find RMSE
-linreg.kidney <- lm(log10(AMP) ~ Timeli.code + Density + log(ACC) + log10(Dischar) + 
-                      Rating + Mort.code + Income + Poverty + Safety.code, data = train.kidney)
+linreg.kidney <- lm(log10(AMP) ~ Timeli.code + Density + Rating + log10(Dischar) + 
+                      Income + Poverty + Mort.code + Exper.code, data = train.kidney)
 summary(linreg.kidney)
 linreg.pred.kidney = predict(linreg, newdata=test.kidney)
-RMSE(linreg.pred.kidney, log10(test.kidney$AMP)) # RMSE = 0.1479005
+RMSE(linreg.pred.kidney, log10(test.kidney$AMP)) # RMSE = 0.2450633
 
 
 
@@ -607,8 +601,8 @@ df.top5$DRGName <- as.character(df.top5$DRGName)
 df.top5$DRGName <- as.factor(df.top5$DRGName)
 levels(df.top5$DRGName) <- c("Esoph", "Heart", "Kidney", "Sept", "Pneu")
 
-# Show distribution of log10(AMP) divided up by DRG
-ggplot(df.top5, aes(DRGName, log10(AMP), color = DRGName)) + 
+# Show distribution of AMP AND log10(AMP) divided up by DRG
+ggplot(df.top5, aes(DRGName, AMP, color = DRGName)) + 
       geom_boxplot()  
 
 ggplot(df.top5, aes(log10(AMP), fill = DRGName)) + 
@@ -624,51 +618,64 @@ ggplot(df.top5, aes(log10(Density), log10(AMP), color = DRGName)) +
   geom_point(shape = 3, position = "jitter", alpha = 0.5) +
   theme(legend.position = "bottom")
 
+ggplot(df.top5, aes(Density, log10(AMP), color = DRGName)) + 
+  geom_point(shape = 3, position = "jitter", alpha = 0.5) +
+  facet_grid(.~DRGName)
+
 ggplot(df.top5, aes(log10(Density), log10(AMP), color = DRGName)) + 
   geom_point(shape = 3, position = "jitter", alpha = 0.5) +
   facet_grid(.~DRGName)
   
 
-# log10(AMP) vs. log10(ACC)
-ggplot(df.top5, aes(log10(ACC), log10(AMP), color = DRGName)) + 
-  geom_point(shape = 3, position = "jitter", alpha = 0.5) +
-  theme(legend.position = "bottom")
 
-ggplot(df.top5, aes(log10(ACC), log10(AMP), color = DRGName)) + 
-  geom_point(shape = 3, position = "jitter", alpha = 0.5) +
-  facet_grid(.~DRGName)
-
-
-# Plots about Timeliness
-ggplot(df.top5, aes(Timeli, log10(AMP), color = Timeli)) + 
-  geom_boxplot() + 
-  facet_grid(.~DRGName)
+# Plots comparing Timeli, Safety, Exper, Effec, Readmiss, and Mort
 
 ggplot(df.top5, aes(log10(AMP), fill = Timeli)) + 
   geom_density(alpha = 0.25) + 
   facet_grid(DRGName~.)
 
-# Plots about Effectiveness
-ggplot(df.top5, aes(Effec, log10(AMP), color = Effec)) + 
-  geom_boxplot() + 
-  facet_grid(.~DRGName)
+ggplot(df.top5, aes(log10(AMP), fill = Safety)) + 
+  geom_density(alpha = 0.25) + 
+  facet_grid(DRGName~.)
+
+ggplot(df.top5, aes(log10(AMP), fill = Exper)) + 
+  geom_density(alpha = 0.25) + 
+  facet_grid(DRGName~.)
 
 ggplot(df.top5, aes(log10(AMP), fill = Effec)) + 
   geom_density(alpha = 0.25) + 
   facet_grid(DRGName~.)
 
-
-#Plots about region
-ggplot(df.top5, aes(Region, log10(AMP), color = Region)) + 
-  geom_boxplot() + 
-  facet_grid(.~DRGName)
-
-ggplot(df.top5, aes(log10(AMP), fill = Region)) + 
+ggplot(df.top5, aes(log10(AMP), fill = Readmiss)) + 
   geom_density(alpha = 0.25) + 
   facet_grid(DRGName~.)
 
-ggplot(df, aes(Region, log10(AMP), fill = Region)) + 
-  geom_boxplot() + ggtitle("All DRGs")
+ggplot(df.top5, aes(log10(AMP), fill = Mort)) + 
+  geom_density(alpha = 0.25) + 
+  facet_grid(DRGName~.)
+
+
+
+
+#Plots about region
+library(maps)
+#load us map data
+all_states <- map_data("state")
+
+
+ggplot(data = df.kidney, aes(Longitude, Latitude, color = AMP)) + 
+  geom_polygon( data=all_states, aes(x=long, y=lat, group = group),colour="white", fill="grey10" ) +
+  geom_point() + 
+  scale_colour_gradient(low="yellow1", high="maroon", trans="log") +
+  coord_cartesian(xlim=c(-130,-70), ylim = c(25, 50))
+  
+
+ggplot(data = df, aes(Longitude, Latitude, color = AMP)) + 
+  geom_polygon( data=all_states, aes(x=long, y=lat, group = group),colour="white", fill="grey10" ) +
+  geom_point() + 
+  scale_colour_gradient(low="yellow1", high="maroon", trans="log") +
+  coord_cartesian(xlim=c(-130,-70), ylim = c(25, 50))
+
 
 # Plots about hospital ownership
 ggplot(df, aes(Owner, log10(AMP), fill = Owner)) + 
