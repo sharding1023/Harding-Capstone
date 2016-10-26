@@ -155,13 +155,27 @@ list.top5 <- list(df.pneu, df.sept, df.heart, df.esoph, df.kidney)
 # Create list that includes all and top 5
 list <- list(df, df.pneu, df.sept, df.heart, df.esoph, df.kidney)
 
-# Find mean and standard deviation of AMP for each 
+# Find minimum, maximum, mean, and standard deviation of AMP for each DRG
+Min <- sapply(list, function(i) min(i$AMP))
+Max <- sapply(list, function(i) max(i$AMP))
 Mean <- sapply(list, function(i) mean(i$AMP))
 SD <- sapply(list, function(i) sd(i$AMP))
 
-AMP.summary <- data.frame(Mean, SD, row.names = c("All DRGS", "Pneu", "Sept", "Heart", "Esoph", "Kidney"))
+AMP.summary <- data.frame(Min, Max, Mean, SD, row.names = c("All DRGS", "Pneu", "Sept", "Heart", "Esoph", "Kidney"))
 View(AMP.summary)
 
+# Show distribution of AMP AND log10(AMP)
+qplot(x = AMP, data = df, binwidth = 5000, main = "Histogram of Average Medicare Payments for All DRGs")
+qplot(x = log10(AMP), data = df, binwidth = .03, main = "Histogram of log(AMP) for All DRGs")
+
+
+ggplot(df.top5, aes(AMP, fill = DRGName)) + 
+  geom_density(alpha = 0.25) + 
+  ggtitle("Density Plot of Average Medicare Payments for each of Top 5 DRGs")
+
+ggplot(df.top5, aes(log10(AMP), fill = DRGName)) + 
+  geom_density(alpha = 0.25) + 
+  ggtitle("Density Plot of log(AMP) for each of Top 5 DRGs")
 
 ###### MODELS
 # For comparison, save all RMSEs in new matrix
@@ -216,7 +230,7 @@ prp(tree.readable, main = "Readable Tree - All DRG's")
 
 # Random Forest
 set.seed(1234)
-split = sample.split(train$AMP, SplitRatio = 0.05)
+split = sample.split(train$AMP, SplitRatio = 0.3)
 train.smaller = subset(df, split==TRUE)
 forest1 = randomForest(log10(AMP) ~ Dischar + Region + Owner + Rating + Mort + Safety + Readmiss + Exper +  Effec + Timeli + Income + Poverty 
                        + Density, data = train.smaller, ntree = 200)
@@ -225,7 +239,7 @@ forest1.pred = predict(forest1, newdata=test)
 RMSEs[1,2] <- RMSE(forest1.pred, log10(test$AMP))
 
 #Important variables
-varImpPlot(forest1)
+varImpPlot(forest1, main = "Variable Importance for Random Forest with All DRGs")
 
 
 #Try making trees, but for only one DRG at a time.
@@ -257,7 +271,7 @@ forest.pneu.pred = predict(forest.pneu, newdata=test.pneu)
 RMSEs[2,2] <- RMSE(forest.pneu.pred, log10(test.pneu$AMP))
 
 #Important variables
-varImpPlot(forest.pneu)
+varImpPlot(forest.pneu, main = "Variable Importance for Pneumonia Random Forest")
 
 
 # Try with SEPTICEMIA OR SEVERE SEPSIS W/O MV 96+ HOURS W MCC
@@ -287,7 +301,7 @@ forest.sept.pred = predict(forest.sept, newdata=test.sept)
 RMSEs[3,2] <- RMSE(forest.sept.pred, log10(test.sept$AMP))
 
 #Important variables
-varImpPlot(forest.sept)
+varImpPlot(forest.sept, main = "Variable Importance for Septicemia Random Forest")
 
 
 
@@ -321,7 +335,7 @@ forest.heart.pred = predict(forest.heart, newdata=test.heart)
 RMSEs[4,2] <- RMSE(forest.heart.pred, log10(test.heart$AMP))
 
 #Important variables
-varImpPlot(forest.heart)
+varImpPlot(forest.heart, main = "Variable Importance for Heart Random Forest")
 
 
 
@@ -353,7 +367,7 @@ forest.esoph.pred = predict(forest.esoph, newdata=test.esoph)
 RMSEs[5,2] <- RMSE(forest.esoph.pred, log10(test.esoph$AMP)) 
 
 #Important variables
-varImpPlot(forest.esoph)
+varImpPlot(forest.esoph, main = "Variable Importance for Esophagitis Random Forest")
 
 
 
@@ -387,7 +401,7 @@ forest.kidney.pred = predict(forest.kidney, newdata=test.kidney)
 RMSEs[6,2] <- RMSE(forest.kidney.pred, log10(test.kidney$AMP)) 
 
 #Important variables
-varImpPlot(forest.kidney)
+varImpPlot(forest.kidney, main = "Variable Importance for Kidney Random Forest")
 
 View(RMSEs)
 
@@ -613,87 +627,32 @@ summary(linreg.kidney)
 
 
 
-############ Visualizations
-
-
-
-# Show distribution of AMP AND log10(AMP) divided up by DRG
-ggplot(df.top5, aes(DRGName, AMP, color = DRGName)) + 
-  geom_boxplot()  
-
-ggplot(df.top5, aes(log10(AMP), fill = DRGName)) + 
-  geom_density(alpha = 0.25)
-
-# Look at log10(AMP) vs. density
-ggplot(df.top5, aes(Density, log10(AMP), color = DRGName)) + 
+############ Visualizations and additional tables
+### ALL DRGS
+#log10(AMP) vs. log10(Dischar)
+ggplot(df.vis, aes(log10(Dischar),log10(AMP))) + 
   geom_point(shape = 3, position = "jitter", alpha = 0.5) +
-  theme(legend.position = "bottom")
+  geom_smooth(method = lm) +  
+  ggtitle("log10(Dischar) vs. log10(AMP) for All DRGs")
 
-
-ggplot(df.top5, aes(log10(Density), log10(AMP), color = DRGName)) + 
+#log10(AMP) vs. log10(Density)
+ggplot(df.vis, aes(log10(Density),log10(AMP))) + 
   geom_point(shape = 3, position = "jitter", alpha = 0.5) +
-  theme(legend.position = "bottom")
+  geom_smooth(method = lm) +  
+  ggtitle("log10(Density) vs. log10(AMP) for All DRGs")
 
-ggplot(df.top5, aes(Density, log10(AMP), color = DRGName)) + 
+
+### Pneumonia Analysis
+#log10(AMP) vs. log10(Density)
+ggplot(df.pneu, aes(log10(Density),log10(AMP))) + 
   geom_point(shape = 3, position = "jitter", alpha = 0.5) +
-  facet_grid(.~DRGName)
+  geom_smooth(method = lm) +  
+  ggtitle("log10(Density) vs. log10(AMP) for Pneumonia")
 
-ggplot(df.top5, aes(log10(Density), log10(AMP), color = DRGName)) + 
-  geom_point(shape = 3, position = "jitter", alpha = 0.5) +
-  facet_grid(.~DRGName)
+#Regions for pneumonia
+ggplot(df.pneu, aes(Region, AMP, fill = Region)) + 
+  geom_boxplot() + ggtitle("Boxplots of Average Medicare Payments by Region for Pneumonia DRG")
 
-
-
-# Plots comparing Timeli, Safety, Exper, Effec, Readmiss, and Mort
-
-ggplot(df.top5, aes(log10(AMP), fill = Timeli)) + 
-  geom_density(alpha = 0.25) + 
-  facet_grid(DRGName~.)
-
-ggplot(df.top5, aes(log10(AMP), fill = Safety)) + 
-  geom_density(alpha = 0.25) + 
-  facet_grid(DRGName~.)
-
-ggplot(df.top5, aes(log10(AMP), fill = Exper)) + 
-  geom_density(alpha = 0.25) + 
-  facet_grid(DRGName~.)
-
-ggplot(df.top5, aes(log10(AMP), fill = Effec)) + 
-  geom_density(alpha = 0.25) + 
-  facet_grid(DRGName~.)
-
-ggplot(df.top5, aes(log10(AMP), fill = Readmiss)) + 
-  geom_density(alpha = 0.25) + 
-  facet_grid(DRGName~.)
-
-ggplot(df.top5, aes(log10(AMP), fill = Mort)) + 
-  geom_density(alpha = 0.25) + 
-  facet_grid(DRGName~.)
-
-
-
-
-#Plots about region
-library(maps)
-#load us map data
-all_states <- map_data("state")
-
-
-ggplot(data = df.kidney, aes(Longitude, Latitude, color = AMP)) + 
-  geom_polygon( data=all_states, aes(x=long, y=lat, group = group),colour="white", fill="grey10" ) +
-  geom_point() + 
-  scale_colour_gradient(low="yellow1", high="maroon", trans="log") +
-  coord_cartesian(xlim=c(-130,-70), ylim = c(25, 50))
-
-
-ggplot(data = df, aes(Longitude, Latitude, color = AMP)) + 
-  geom_polygon( data=all_states, aes(x=long, y=lat, group = group),colour="white", fill="grey10" ) +
-  geom_point() + 
-  scale_colour_gradient(low="yellow1", high="maroon", trans="log") +
-  coord_cartesian(xlim=c(-130,-70), ylim = c(25, 50))
-
-
-# Plots about hospital ownership
-ggplot(df, aes(Owner, log10(AMP), fill = Owner)) + 
-  geom_boxplot() + ggtitle("All DRGs")
-
+#Region mean AMPs for pneumonia
+means.regions.pneu <- summarise(group_by(df.pneu, Region), mean(AMP), sd(AMP))
+View(means.regions.pneu)
