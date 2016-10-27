@@ -5,6 +5,7 @@
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(ggthemes)
 library(rpart)
 library(rpart.plot)
 library(caTools)
@@ -629,30 +630,75 @@ summary(linreg.kidney)
 
 ############ Visualizations and additional tables
 ### ALL DRGS
+split = sample.split(df$AMP, SplitRatio = 0.06)
+df.vis = subset(df, split==TRUE)
+
 #log10(AMP) vs. log10(Dischar)
 ggplot(df.vis, aes(log10(Dischar),log10(AMP))) + 
-  geom_point(shape = 3, position = "jitter", alpha = 0.5) +
-  geom_smooth(method = lm) +  
-  ggtitle("log10(Dischar) vs. log10(AMP) for All DRGs")
+  geom_point(shape = 1) +
+  geom_smooth(method = lm, se=FALSE) +  
+  ggtitle("log(AMP) vs. log(Dischar) for All DRGs") +
+  theme_par() 
+
 
 #log10(AMP) vs. log10(Density)
 ggplot(df.vis, aes(log10(Density),log10(AMP))) + 
-  geom_point(shape = 3, position = "jitter", alpha = 0.5) +
-  geom_smooth(method = lm) +  
-  ggtitle("log10(Density) vs. log10(AMP) for All DRGs")
+  geom_point(shape = 1) +
+  geom_smooth(method = lm, se=FALSE) +  
+  ggtitle("log(AMP) vs. log(Density) for All DRGs") +
+  theme_par() 
+
+### Top 5 DRGs
+
+## Density
+#AMP vs. Density
+ggplot(df.top5, aes(Density,AMP)) + 
+  geom_point(shape = 1) +
+  geom_smooth(method = lm, se=FALSE) +  
+  facet_grid(.~DRGName) + 
+  theme_par() 
+  
+  
+## Region
+#Regions Boxplots
+ggplot(df.top5, aes(Region, AMP, fill = Region)) + 
+  geom_boxplot() + 
+  coord_flip() +
+  facet_grid(DRGName~.) +
+  theme_par()
+
+#Region mean AMPs for top 5 DRGs
+means.regions.top5 <- summarise(group_by(df.top5, Region), mean(AMP), sd(AMP))
+View(means.regions.top5)
 
 
-### Pneumonia Analysis
-#log10(AMP) vs. log10(Density)
-ggplot(df.pneu, aes(log10(Density),log10(AMP))) + 
-  geom_point(shape = 3, position = "jitter", alpha = 0.5) +
-  geom_smooth(method = lm) +  
-  ggtitle("log10(Density) vs. log10(AMP) for Pneumonia")
 
-#Regions for pneumonia
-ggplot(df.pneu, aes(Region, AMP, fill = Region)) + 
-  geom_boxplot() + ggtitle("Boxplots of Average Medicare Payments by Region for Pneumonia DRG")
+## Owner
+ggplot(df.top5, aes(Owner, AMP, fill = Owner)) + 
+  geom_boxplot() + 
+  coord_flip() +
+  theme_par()
 
-#Region mean AMPs for pneumonia
-means.regions.pneu <- summarise(group_by(df.pneu, Region), mean(AMP), sd(AMP))
-View(means.regions.pneu)
+
+## Median income
+#log10(AMP) vs. Income
+ggplot(df.top5, aes(Income, AMP)) + 
+  geom_point(shape = 1) +
+  geom_smooth(method = lm, se=FALSE) +  
+  facet_grid(DRGName~.) + 
+  theme_par() 
+
+## Timeliness of Care
+ggplot(df.top5, aes(Timeli, AMP, fill = Timeli)) + 
+  geom_boxplot() + 
+  coord_flip() +
+  facet_grid(DRGName~.) +
+  theme_par()
+
+## Poverty
+ggplot(df.top5, aes(Poverty, AMP)) + 
+  geom_point(shape = 1) +
+  xlab("Percentage in Poverty in County (%)") +
+  geom_smooth(method = lm, se=FALSE) +  
+  facet_grid(.~DRGName) + 
+  theme_par() 
