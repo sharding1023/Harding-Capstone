@@ -166,17 +166,16 @@ AMP.summary <- data.frame(Min, Max, Mean, SD, row.names = c("All DRGS", "Pneu", 
 View(AMP.summary)
 
 # Show distribution of AMP AND log10(AMP)
-qplot(x = AMP, data = df, binwidth = 5000, main = "Histogram of Average Medicare Payments for All DRGs")
-qplot(x = log10(AMP), data = df, binwidth = .03, main = "Histogram of log(AMP) for All DRGs")
+qplot(x = AMP, data = df, binwidth = 5000, main = "Histogram of Average Medicare Payments for All DRGs") +
+  coord_cartesian(xlim = c(0, 80000)) +
+  theme_par()
+
+qplot(x = log10(AMP), data = df, binwidth = .03, main = "Histogram of log(AMP) for All DRGs") + 
+  theme_par()
 
 
-ggplot(df.top5, aes(AMP, fill = DRGName)) + 
-  geom_density(alpha = 0.25) + 
-  ggtitle("Density Plot of Average Medicare Payments for each of Top 5 DRGs")
 
-ggplot(df.top5, aes(log10(AMP), fill = DRGName)) + 
-  geom_density(alpha = 0.25) + 
-  ggtitle("Density Plot of log(AMP) for each of Top 5 DRGs")
+
 
 ###### MODELS
 # For comparison, save all RMSEs in new matrix
@@ -658,13 +657,18 @@ ggplot(df.top5, aes(Density,AMP)) +
   facet_grid(.~DRGName) + 
   theme_par() 
   
+ggplot(df.top5, aes(Density,AMP)) + 
+  geom_point(shape = 1) +
+  geom_smooth(method = lm, se=FALSE) +  
+  facet_grid(.~DRGName) + 
+  theme_par() 
   
 ## Region
 #Regions Boxplots
-ggplot(df.top5, aes(Region, AMP, fill = Region)) + 
+ggplot(df.top5, aes(DRGName, AMP, fill=DRGName)) + 
   geom_boxplot() + 
   coord_flip() +
-  facet_grid(DRGName~.) +
+  facet_grid(Region~.) +
   theme_par()
 
 #Region mean AMPs for top 5 DRGs
